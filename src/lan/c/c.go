@@ -67,6 +67,17 @@ func (file *CFile) Detect(path string){
 		}
 		char := string(content[idx])
 		checkLine(char, &line)
+		if char == "/"{
+			if idx + 1>= size{
+				break
+			}
+			nextChar := string(content[idx + 1])
+			if nextChar == "/"{
+				processComment1(content, &idx, size, &line)
+			}else if nextChar == "*"{
+				processComment2(content, &idx, size, &line)
+			}
+		}
 		if char  == "#"{
 			if isInclude(content, &idx, size, &line){
 				var header string
@@ -75,7 +86,7 @@ func (file *CFile) Detect(path string){
 			}
 		}
 		if char == "{"{
-			words := getFrontTwoWords(content, idx)
+			words := getFrontWords(content, idx, 2)
 			if words[0] == lan.ENUM {
 				ce := CEnum{EnumName:words[1]}
 				processEnum(content, &idx, size, &line ,&ce)
@@ -95,13 +106,54 @@ func (file *CFile) Detect(path string){
 			}else if strings.Contains(words[0], ")") || strings.Contains(words[1], ")"){
 				cm := CMethod{}
 				processMethod(content, &idx, size, &line, &cm)
-				file.Methods = append(file.Methods, cm)
+				if cm.MethodName != lan.DEFINE{
+					file.Methods = append(file.Methods, cm)
+				}
 			}
 		}
 		idx++
 	}
 	file.Line = line
 }
+
+//处理注释
+func processComment1(content []byte, idx *int, size int, line *int){
+	var char string
+	for {
+		*idx++
+		if *idx >= size{
+			break
+		}
+		char = string(content[*idx])
+		checkLine(char, line)
+		if char == "\n"{
+			break
+		}
+	}
+}
+func processComment2(content []byte, idx *int, size int, line *int){
+	var char string
+	for {
+		*idx++
+		if *idx >= size{
+			break
+		}
+		char = string(content[*idx])
+		checkLine(char, line)
+		if char == "*"{
+			*idx++
+			if *idx >= size{
+				break
+			}
+			char = string(content[*idx])
+			checkLine(char, line)
+			if char == "/"{
+				break
+			}
+		}
+	}
+}
+
 
 //判断#后面是否为include
 func isInclude(content []byte, idx *int, size int, line *int) bool{
@@ -153,12 +205,12 @@ func processHeader(content []byte, idx *int, size int, line *int, header *string
 }
 
 //获取左大括号前面两个标识符，用于判断枚举变量或结构体
-func getFrontTwoWords(content []byte, idx int) []string{
+func getFrontWords(content []byte, idx int, n int) []string{
 	tmpIndex := idx
 	var char string
 	//跳过两个标识符
-	s := make([]string, 2)
-	for i:=0;i<2; i++ {
+	s := make([]string, n)
+	for i:=0;i<n; i++ {
 		for {
 			tmpIndex--
 			if tmpIndex < 0{
@@ -174,14 +226,16 @@ func getFrontTwoWords(content []byte, idx int) []string{
 			if util.IsSpace(char){
 				break
 			}
-			tmpS = append([]string{char}, tmpS...)
+			if char != "*"{
+				tmpS = append([]string{char}, tmpS...)
+			}
 			tmpIndex--
 			if tmpIndex < 0{
 				break
 			}
 			char = string(content[tmpIndex])
 		}
-		s[1-i] = strings.Join(tmpS, "")
+		s[n-1-i] = strings.Join(tmpS, "")
 	}
 	return s
 }
@@ -258,9 +312,10 @@ func processMethod(content []byte, idx *int, size int, line *int, cm *CMethod){
 	}
 	//查找参数列表
 	params := make([]string, 0)
+	rightParen := 1
 	for {
 		params = append([]string{char}, params...)
-		if char == "("{
+		if rightParen == 0{
 			break
 		}
 		tmpIndex--
@@ -268,33 +323,21 @@ func processMethod(content []byte, idx *int, size int, line *int, cm *CMethod){
 			break
 		}
 		char = string(content[tmpIndex])
+		if char == ")"{
+			rightParen++
+		}else if char == "("{
+			rightParen--
+		}
 	}
 	cm.Params = strings.Join(params, "")
 
 	//查找方法名
-	for {
-		tmpIndex--
-		if tmpIndex < 0{
-			break
-		}
-		char = string(content[tmpIndex])
-		if !util.IsSpace(char){
-			break
-		}
+	words := getFrontWords(content, tmpIndex, 2)
+	if strings.Contains(words[0], lan.DEFINE){
+		cm.MethodName = lan.DEFINE
+		return
 	}
-	methodName := make([]string, 0)
-	for {
-		if util.IsSpace(char){
-			break
-		}
-		methodName = append([]string{char}, methodName...)
-		tmpIndex--
-		if tmpIndex < 0{
-			break
-		}
-		char = string(content[tmpIndex])
-	}
-	cm.MethodName = strings.Join(methodName, "")
+	cm.MethodName = words[1]
 
 	//查找结束行
 	leftBracketCnt := 1

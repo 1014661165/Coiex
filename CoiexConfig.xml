@@ -2,5 +2,6 @@
     <repo_path>/Users/wujun/Software/dataset/redis</repo_path>
     <extensions>c,h</extensions>
     <language>c</language>
-    <output_file>result.json</output_file>
+    <output_folder>result</output_folder>
+    <output_interval>100</output_interval>
 </Config>

@@ -1,10 +1,10 @@
 package main
 
 import (
-	"../util"
 	"fmt"
 )
 
 func main() {
-	fmt.Println(util.IsSpace("1"))
+	var a = []int{1,2,3}
+	fmt.Println(a[1:5])
 }

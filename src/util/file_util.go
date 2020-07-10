@@ -52,3 +52,8 @@ func Exists(path string) bool{
 	}
 	return true
 }
+
+//创建文件夹
+func Mkdir(folder string){
+	_ = os.Mkdir(folder, 0744)
+}
