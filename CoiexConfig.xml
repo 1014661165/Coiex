@@ -1,0 +1,6 @@
+<Config>
+    <repo_path>/Users/wujun/Software/dataset/redis</repo_path>
+    <extensions>c,h</extensions>
+    <language>c</language>
+    <output_file>result.json</output_file>
+</Config>
