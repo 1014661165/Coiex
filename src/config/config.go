@@ -27,7 +27,7 @@ func (c *Config) Save(file string){
 	c.Extensions = ""
 	c.OutputFolder = "result"
 	c.OutputInterval = 0
-	content,_ := xml.Marshal(c)
+	content,_ := xml.MarshalIndent(c, "", "\t")
 	ioutil.WriteFile(file, content, 0744)
 }
 

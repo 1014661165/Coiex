@@ -1,10 +1,12 @@
 package main
 
-import (
-	"fmt"
-)
+import "fmt"
 
 func main() {
-	var a = []int{1,2,3}
-	fmt.Println(a[1:5])
+	a := make([]string, 0)
+	fmt.Println(len(a))
+	fmt.Println(cap(a))
+	a = append(a, "1")
+	fmt.Println(len(a))
+	fmt.Println(cap(a))
 }

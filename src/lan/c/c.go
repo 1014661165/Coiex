@@ -1,15 +1,14 @@
 package c
 
 import (
+	"../../lan"
 	"../../util"
 	"strings"
 )
-import "../../lan"
 
-//C文件结构体
+//C文件
 type CFile struct {
-	Path string `json:"path"`
-	Line int `json:"line"`
+	lan.File
 	Headers []string `json:"headers"`
 	Methods []CMethod `json:"methods"`
 	Structs []CStruct `json:"structs"`
@@ -22,6 +21,7 @@ type CMethod struct {
 	Params string `json:"params"`
 	StartLine int `json:"start_line"`
 	EndLine int `json:"end_line"`
+	Apis []string `json:"apis"`
 }
 
 //C文件结构体
@@ -36,12 +36,6 @@ type CEnum struct {
 	EnumName string `json:"enum_name"`
 	StartLine int `json:"start_line"`
 	EndLine int `json:"end_line"`
-}
-
-//C文件接口
-type ICFile interface {
-	Init()
-	Detect(path string)
 }
 
 //初始化
@@ -204,11 +198,11 @@ func processHeader(content []byte, idx *int, size int, line *int, header *string
 	*header = s
 }
 
-//获取左大括号前面两个标识符，用于判断枚举变量或结构体
+//获取左大括号前面n个标识符，用于判断枚举变量或结构体
 func getFrontWords(content []byte, idx int, n int) []string{
 	tmpIndex := idx
 	var char string
-	//跳过两个标识符
+	//跳过n个标识符
 	s := make([]string, n)
 	for i:=0;i<n; i++ {
 		for {
@@ -341,6 +335,7 @@ func processMethod(content []byte, idx *int, size int, line *int, cm *CMethod){
 
 	//查找结束行
 	leftBracketCnt := 1
+	methodBody := []string{string(content[*idx])}
 	for {
 		if leftBracketCnt == 0{
 			break
@@ -351,6 +346,7 @@ func processMethod(content []byte, idx *int, size int, line *int, cm *CMethod){
 		}
 		char = string(content[*idx])
 		checkLine(char, line)
+		methodBody = append(methodBody, char)
 		if char == "{"{
 			leftBracketCnt++
 		}else if char == "}"{
@@ -358,4 +354,54 @@ func processMethod(content []byte, idx *int, size int, line *int, cm *CMethod){
 		}
 	}
 	cm.EndLine = *line + 1
+	cm.Apis = findApis(methodBody)
+}
+
+//从方法体中查找api调用
+func findApis(chars []string) []string{
+	var char string
+	index := 0
+	apis := make([]string, 0)
+	for {
+		if index >= len(chars){
+			break
+		}
+		char = chars[index]
+		if char == "("{
+			tmpIndex := index
+			var tmpChar string
+			apiName := make([]string, 0)
+			for {
+				tmpIndex--
+				if tmpIndex < 0{
+					break
+				}
+				tmpChar = chars[tmpIndex]
+				if !util.IsSpace(tmpChar){
+					break
+				}
+			}
+			for {
+				if !util.IsIdentifier(tmpChar){
+					break
+				}
+				apiName = append([]string{tmpChar}, apiName...)
+				tmpIndex--
+				if tmpIndex < 0{
+					break
+				}
+				tmpChar = chars[tmpIndex]
+			}
+			if len(apiName) != 0{
+				api := strings.Join(apiName, "")
+				if api != ""{
+					if !strings.Contains(lan.C_KEYWORDS_WITH_PAREN, api){
+						apis = append(apis, api)
+					}
+				}
+			}
+		}
+		index++
+	}
+	return apis
 }
