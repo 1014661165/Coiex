@@ -1,12 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 func main() {
-	a := make([]string, 0)
-	fmt.Println(len(a))
-	fmt.Println(cap(a))
-	a = append(a, "1")
-	fmt.Println(len(a))
-	fmt.Println(cap(a))
+	a := "a\"c"
+	fmt.Println(strings.Count(a, "\""))
 }

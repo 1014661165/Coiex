@@ -81,26 +81,26 @@ func (file *CFile) Detect(path string){
 		}
 		if char == "{"{
 			words := getFrontWords(content, idx, 2)
-			if words[0] == lan.ENUM {
+			if words[0] == lan.C_ENUM {
 				ce := CEnum{EnumName:words[1]}
 				processEnum(content, &idx, size, &line ,&ce)
 				file.Enums = append(file.Enums, ce)
-			}else if words[1] == lan.ENUM {
+			}else if words[1] == lan.C_ENUM {
 				ce := CEnum{EnumName:""}
 				processEnum(content, &idx, size, &line ,&ce)
 				file.Enums = append(file.Enums, ce)
-			}else if words[0] == lan.STRUCT{
+			}else if words[0] == lan.C_STRUCT{
 				cs := CStruct{StructName:words[1]}
 				processStruct(content, &idx, size, &line, &cs)
 				file.Structs = append(file.Structs, cs)
-			}else if words[1] == lan.STRUCT {
+			}else if words[1] == lan.C_STRUCT {
 				cs := CStruct{StructName:""}
 				processStruct(content, &idx, size, &line, &cs)
 				file.Structs = append(file.Structs, cs)
 			}else if strings.Contains(words[0], ")") || strings.Contains(words[1], ")"){
 				cm := CMethod{}
 				processMethod(content, &idx, size, &line, &cm)
-				if cm.MethodName != lan.DEFINE{
+				if cm.MethodName != lan.C_DEFINE{
 					file.Methods = append(file.Methods, cm)
 				}
 			}
@@ -165,7 +165,7 @@ func isInclude(content []byte, idx *int, size int, line *int) bool{
 		}
 		s += char
 	}
-	return s == lan.INCLUDE
+	return s == lan.C_INCLUDE
 }
 
 //记录头文件
@@ -198,7 +198,7 @@ func processHeader(content []byte, idx *int, size int, line *int, header *string
 	*header = s
 }
 
-//获取左大括号前面n个标识符，用于判断枚举变量或结构体
+//获取前面n个标识符
 func getFrontWords(content []byte, idx int, n int) []string{
 	tmpIndex := idx
 	var char string
@@ -327,8 +327,8 @@ func processMethod(content []byte, idx *int, size int, line *int, cm *CMethod){
 
 	//查找方法名
 	words := getFrontWords(content, tmpIndex, 2)
-	if strings.Contains(words[0], lan.DEFINE){
-		cm.MethodName = lan.DEFINE
+	if strings.Contains(words[0], lan.C_DEFINE){
+		cm.MethodName = lan.C_DEFINE
 		return
 	}
 	cm.MethodName = words[1]
