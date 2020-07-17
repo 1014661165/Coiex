@@ -1,0 +1,41 @@
+[
+	{
+		"path": "./testcase/Test.java",
+		"line": 15,
+		"package": "com",
+		"imports": [
+			"java.io.IOException"
+		],
+		"classes": [
+			{
+				"name": "Test",
+				"access": "public",
+				"super_class": "A",
+				"interfaces": [
+					"B",
+					"C"
+				],
+				"start_line": 5,
+				"end_line": 16
+			}
+		],
+		"methods": [
+			{
+				"method_name": "main",
+				"params": "(String[] args)",
+				"access": "public",
+				"start_line": 9,
+				"end_line": 11,
+				"apis": []
+			},
+			{
+				"method_name": "add",
+				"params": "(List\u003cInteger\u003e list)",
+				"access": "public",
+				"start_line": 13,
+				"end_line": 15,
+				"apis": []
+			}
+		]
+	}
+]

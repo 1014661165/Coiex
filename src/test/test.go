@@ -2,10 +2,15 @@ package main
 
 import (
 	"fmt"
-	"strings"
+	"io/ioutil"
 )
 
 func main() {
-	a := "a\"c"
-	fmt.Println(strings.Count(a, "\""))
+	content,_ := ioutil.ReadFile("./testcase/Test.java")
+	fmt.Println(len(content))
+	for _,b := range content{
+		if b == '\\'{
+			fmt.Println(true)
+		}
+	}
 }

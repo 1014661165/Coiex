@@ -69,6 +69,9 @@ func (file *JavaFile) Detect(path string){
 				processComment2(content, &idx, size, &line)
 			}
 		}
+		if char == "\""{
+			processString(content, &idx, size)
+		}
 		if char == "p"{
 			if isTargetWord(content, idx, lan.JAVA_PACKAGE){
 				if file.Package == ""{
@@ -148,6 +151,25 @@ func processComment2(content []byte, idx *int, size int, line *int){
 			if char == "/"{
 				break
 			}
+		}
+	}
+}
+
+//处理字符串变量
+func processString(content []byte, idx *int, size int){
+	char := string(content[*idx])
+	for {
+		*idx++
+		if *idx >= size{
+			break
+		}
+		if content[*idx] == '\\'{
+			*idx++
+			continue
+		}
+		char = string(content[*idx])
+		if char == "\""{
+			break
 		}
 	}
 }
@@ -353,7 +375,7 @@ func getFrontWords(content []byte, idx int, n int) []string{
 				break
 			}
 			if char != "*"{
-				tmpS = append([]string{char}, tmpS...)
+				tmpS = append(tmpS, char)
 			}
 			tmpIndex--
 			if tmpIndex < 0{
@@ -361,7 +383,7 @@ func getFrontWords(content []byte, idx int, n int) []string{
 			}
 			char = string(content[tmpIndex])
 		}
-		s[n-1-i] = strings.Join(tmpS, "")
+		s[n-1-i] = util.ReverseString(strings.Join(tmpS, ""))
 	}
 	return s
 }
@@ -471,7 +493,7 @@ func processMethod(content []byte, idx *int, size int, line *int, javaMethod *Ja
 
 	//计算结束行
 	leftBracketCnt := 1
-	methodBody := []string{string(content[*idx])}
+	methodBody := []byte{content[*idx]}
 	for {
 		if leftBracketCnt == 0{
 			break
@@ -482,7 +504,7 @@ func processMethod(content []byte, idx *int, size int, line *int, javaMethod *Ja
 		}
 		char = string(content[*idx])
 		checkLine(char, line)
-		methodBody = append(methodBody, char)
+		methodBody = append(methodBody, content[*idx])
 		if char == "{"{
 			leftBracketCnt++
 		}else if char == "}"{
@@ -494,7 +516,7 @@ func processMethod(content []byte, idx *int, size int, line *int, javaMethod *Ja
 }
 
 //从方法体中查找api调用
-func findApis(chars []string) []string{
+func findApis(chars []byte) []string{
 	var char string
 	index := 0
 	apis := make([]string, 0)
@@ -502,7 +524,11 @@ func findApis(chars []string) []string{
 		if index >= len(chars){
 			break
 		}
-		char = chars[index]
+		char = string(chars[index])
+		if char == "\""{
+			processString(chars, &index, len(chars))
+		}
+
 		if char == "("{
 			tmpIndex := index
 			var tmpChar string
@@ -512,7 +538,7 @@ func findApis(chars []string) []string{
 				if tmpIndex < 0{
 					break
 				}
-				tmpChar = chars[tmpIndex]
+				tmpChar = string(chars[tmpIndex])
 				if !util.IsSpace(tmpChar){
 					break
 				}
@@ -526,7 +552,7 @@ func findApis(chars []string) []string{
 				if tmpIndex < 0{
 					break
 				}
-				tmpChar = chars[tmpIndex]
+				tmpChar = string(chars[tmpIndex])
 			}
 			if len(apiName) != 0{
 				api := strings.Join(apiName, "")
