@@ -57,23 +57,23 @@ func (file *JavaFile) Detect(path string){
 			break
 		}
 		char := string(content[idx])
-		checkLine(char, &line)
+		lan.CheckLine(char, &line)
 		if char == "/"{
 			if idx + 1>= size{
 				break
 			}
 			nextChar := string(content[idx + 1])
 			if nextChar == "/"{
-				processComment1(content, &idx, size, &line)
+				lan.ProcessComment1(content, &idx, size, &line)
 			}else if nextChar == "*"{
-				processComment2(content, &idx, size, &line)
+				lan.ProcessComment2(content, &idx, size, &line)
 			}
 		}
 		if char == "\""{
-			processString(content, &idx, size)
+			lan.ProcessString(content, &idx, size)
 		}
 		if char == "p"{
-			if isTargetWord(content, idx, lan.JAVA_PACKAGE){
+			if lan.IsTargetWord(content, idx, lan.JAVA_PACKAGE){
 				if file.Package == ""{
 					if len(file.Imports) == 0 && len(file.Classes) == 0{
 						file.Package = processPackage(content, &idx, size, &line)
@@ -82,7 +82,7 @@ func (file *JavaFile) Detect(path string){
 			}
 		}
 		if char == "i"{
-			if isTargetWord(content, idx, lan.JAVA_IMPORT){
+			if lan.IsTargetWord(content, idx, lan.JAVA_IMPORT){
 				if len(file.Classes) == 0{
 					importPackage := processImports(content, &idx, size, &line)
 					if !strings.Contains(importPackage, "\""){
@@ -92,7 +92,7 @@ func (file *JavaFile) Detect(path string){
 			}
 		}
 		if char == "c"{
-			if isTargetWord(content, idx, lan.JAVA_CLASS){
+			if lan.IsTargetWord(content, idx, lan.JAVA_CLASS){
 				javaClass := JavaClass{}
 				processClass(content, &idx, size, &line, &javaClass)
 				file.Classes = append(file.Classes, javaClass)
@@ -110,101 +110,6 @@ func (file *JavaFile) Detect(path string){
 	file.Line = line
 }
 
-//判断是否需要增加行数
-func checkLine(char string, line *int){
-	if char == "\n"{
-		*line++
-	}
-}
-
-//处理注释
-func processComment1(content []byte, idx *int, size int, line *int){
-	var char string
-	for {
-		*idx++
-		if *idx >= size{
-			break
-		}
-		char = string(content[*idx])
-		checkLine(char, line)
-		if char == "\n"{
-			break
-		}
-	}
-}
-func processComment2(content []byte, idx *int, size int, line *int){
-	var char string
-	for {
-		*idx++
-		if *idx >= size{
-			break
-		}
-		char = string(content[*idx])
-		checkLine(char, line)
-		if char == "*"{
-			*idx++
-			if *idx >= size{
-				break
-			}
-			char = string(content[*idx])
-			checkLine(char, line)
-			if char == "/"{
-				break
-			}
-		}
-	}
-}
-
-//处理字符串变量
-func processString(content []byte, idx *int, size int){
-	char := string(content[*idx])
-	for {
-		*idx++
-		if *idx >= size{
-			break
-		}
-		if content[*idx] == '\\'{
-			*idx++
-			continue
-		}
-		char = string(content[*idx])
-		if char == "\""{
-			break
-		}
-	}
-}
-
-//判断是否为目标词
-func isTargetWord(content []byte, idx int, target string) bool{
-	char := string(content[idx])
-	tmpIndex := idx
-	var s string
-	for {
-		s += char
-		tmpIndex++
-		if tmpIndex >= len(content){
-			break
-		}
-		char = string(content[tmpIndex])
-		if !util.IsIdentifier(char){
-			break
-		}
-	}
-	preCharIsSpace := true
-	nextCharisSpace := true
-
-	if !util.IsSpace(char){
-		nextCharisSpace = false
-	}
-	if idx - 1 >= 0{
-		char = string(content[idx - 1])
-		if !util.IsSpace(char){
-			preCharIsSpace = false
-		}
-	}
-	return  s == target && preCharIsSpace && nextCharisSpace
-}
-
 //处理包名
 func processPackage(content []byte, idx *int, size int, line *int) string{
 	packageName := ""
@@ -218,7 +123,7 @@ func processPackage(content []byte, idx *int, size int, line *int) string{
 			break
 		}
 		char = string(content[*idx])
-		checkLine(char, line)
+		lan.CheckLine(char, line)
 		if char == ";"{
 			break
 		}
@@ -240,7 +145,7 @@ func processImports(content []byte, idx *int, size int, line *int) string{
 			break
 		}
 		char = string(content[*idx])
-		checkLine(char, line)
+		lan.CheckLine(char, line)
 		if char == ";"{
 			break
 		}
@@ -254,7 +159,7 @@ func processClass(content []byte, idx *int, size int, line *int, javaClass *Java
 	javaClass.StartLine = *line + 1
 
 	//获取类访问权限
-	words := getFrontWords(content, *idx, 3)
+	words := lan.GetFrontWords(content, *idx, 3)
 	for _,word := range words{
 		if strings.Contains(lan.JAVA_ACCESSES, word){
 			javaClass.Access = word
@@ -273,7 +178,7 @@ func processClass(content []byte, idx *int, size int, line *int, javaClass *Java
 			break
 		}
 		char = string(content[*idx])
-		checkLine(char, line)
+		lan.CheckLine(char, line)
 		if !util.IsSpace(char){
 			break
 		}
@@ -286,7 +191,7 @@ func processClass(content []byte, idx *int, size int, line *int, javaClass *Java
 			break
 		}
 		char = string(content[*idx])
-		checkLine(char, line)
+		lan.CheckLine(char, line)
 		if !util.IsIdentifier(char){
 			break
 		}
@@ -306,7 +211,7 @@ func processClass(content []byte, idx *int, size int, line *int, javaClass *Java
 			break
 		}
 		char = string(content[*idx])
-		checkLine(char, line)
+		lan.CheckLine(char, line)
 	}
 	sentence = strings.ReplaceAll(sentence, ",", " ")
 	words = strings.Split(sentence, " ")
@@ -342,7 +247,7 @@ func processClass(content []byte, idx *int, size int, line *int, javaClass *Java
 			break
 		}
 		char = string(content[tmpIndex])
-		checkLine(char, &tmpLine)
+		lan.CheckLine(char, &tmpLine)
 		if char == "{"{
 			leftBracketCnt++
 		}else if char == "}"{
@@ -350,42 +255,6 @@ func processClass(content []byte, idx *int, size int, line *int, javaClass *Java
 		}
 	}
 	javaClass.EndLine = tmpLine + 1
-}
-
-//获取前面n个标识符
-func getFrontWords(content []byte, idx int, n int) []string{
-	tmpIndex := idx
-	var char string
-	//向前跳过n个标识符
-	s := make([]string, n)
-	for i:=0;i<n; i++ {
-		for {
-			tmpIndex--
-			if tmpIndex < 0{
-				break
-			}
-			char = string(content[tmpIndex])
-			if !util.IsSpace(char){
-				break
-			}
-		}
-		tmpS := make([]string, 0)
-		for {
-			if util.IsSpace(char){
-				break
-			}
-			if char != "*"{
-				tmpS = append(tmpS, char)
-			}
-			tmpIndex--
-			if tmpIndex < 0{
-				break
-			}
-			char = string(content[tmpIndex])
-		}
-		s[n-1-i] = util.ReverseString(strings.Join(tmpS, ""))
-	}
-	return s
 }
 
 func isMethod(content []byte, idx int) bool{
@@ -440,7 +309,7 @@ func isMethod(content []byte, idx int) bool{
 			rightParen--
 		}
 	}
-	word := getFrontWords(content, tmpIndex, 1)
+	word := lan.GetFrontWords(content, tmpIndex, 1)
 	if strings.Contains(lan.JAVA_KEYWORDS_WITH_PAREN, word[0]){
 		return false
 	}
@@ -479,7 +348,7 @@ func processMethod(content []byte, idx *int, size int, line *int, javaMethod *Ja
 	javaMethod.Params = util.ReverseString(javaMethod.Params)
 
 	//提取方法名和访问权限
-	words := getFrontWords(content, tmpIndex, 4)
+	words := lan.GetFrontWords(content, tmpIndex, 4)
 	javaMethod.MethodName = words[3]
 	for _,word := range words{
 		if strings.Contains(lan.JAVA_ACCESSES, word){
@@ -503,7 +372,7 @@ func processMethod(content []byte, idx *int, size int, line *int, javaMethod *Ja
 			break
 		}
 		char = string(content[*idx])
-		checkLine(char, line)
+		lan.CheckLine(char, line)
 		methodBody = append(methodBody, content[*idx])
 		if char == "{"{
 			leftBracketCnt++
@@ -512,58 +381,5 @@ func processMethod(content []byte, idx *int, size int, line *int, javaMethod *Ja
 		}
 	}
 	javaMethod.EndLine = *line + 1
-	javaMethod.Apis = findApis(methodBody)
-}
-
-//从方法体中查找api调用
-func findApis(chars []byte) []string{
-	var char string
-	index := 0
-	apis := make([]string, 0)
-	for {
-		if index >= len(chars){
-			break
-		}
-		char = string(chars[index])
-		if char == "\""{
-			processString(chars, &index, len(chars))
-		}
-
-		if char == "("{
-			tmpIndex := index
-			var tmpChar string
-			apiName := make([]string, 0)
-			for {
-				tmpIndex--
-				if tmpIndex < 0{
-					break
-				}
-				tmpChar = string(chars[tmpIndex])
-				if !util.IsSpace(tmpChar){
-					break
-				}
-			}
-			for {
-				if !util.IsIdentifier(tmpChar){
-					break
-				}
-				apiName = append([]string{tmpChar}, apiName...)
-				tmpIndex--
-				if tmpIndex < 0{
-					break
-				}
-				tmpChar = string(chars[tmpIndex])
-			}
-			if len(apiName) != 0{
-				api := strings.Join(apiName, "")
-				if api != ""{
-					if !strings.Contains(lan.C_KEYWORDS_WITH_PAREN, api){
-						apis = append(apis, api)
-					}
-				}
-			}
-		}
-		index++
-	}
-	return apis
+	javaMethod.Apis = lan.FindApis(methodBody, lan.JAVA_KEYWORDS_WITH_PAREN)
 }

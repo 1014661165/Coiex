@@ -1,4 +1,4 @@
-package c
+package cpp
 
 import (
 	"../../lan"
@@ -6,17 +6,32 @@ import (
 	"strings"
 )
 
-//C文件
-type CFile struct {
+//Cpp文件
+type CppFile struct {
 	lan.File
 	Headers []string `json:"headers"`
-	Methods []CMethod `json:"methods"`
-	Structs []CStruct `json:"structs"`
-	Enums []CEnum `json:"enums"`
+	Namespaces []CppNamespace `json:"namespaces"`
+	Classes []CppClass `json:"classes"`
+	Methods []CppMethod `json:"methods"`
+	Structs []CppStruct `json:"structs"`
+	Enums []CppEnum `json:"enums"`
 }
 
-//C文件方法
-type CMethod struct {
+type CppNamespace struct {
+	Name string `json:"name"`
+	StartLine int `json:"start_line"`
+	EndLine int `json:"end_line"`
+}
+
+type CppClass struct {
+	Name string `json:"name"`
+	SuperClasses []string `json:"super_classes"`
+	StartLine int `json:"start_line"`
+	EndLine int `json:"end_line"`
+}
+
+//Cpp文件方法
+type CppMethod struct {
 	MethodName string `json:"method_name"`
 	Params string `json:"params"`
 	StartLine int `json:"start_line"`
@@ -24,32 +39,34 @@ type CMethod struct {
 	Apis []string `json:"apis"`
 }
 
-//C文件结构体
-type CStruct struct {
+//Cpp文件结构体
+type CppStruct struct {
 	StructName string `json:"struct_name"`
 	StartLine int `json:"start_line"`
 	EndLine int `json:"end_line"`
 }
 
-//C文件枚举
-type CEnum struct {
+//Cpp文件枚举
+type CppEnum struct {
 	EnumName string `json:"enum_name"`
 	StartLine int `json:"start_line"`
 	EndLine int `json:"end_line"`
 }
 
 //初始化
-func (file *CFile) Init(){
+func (file *CppFile) Init(){
 	file.Path = ""
 	file.Line = 0
 	file.Headers = make([]string, 0)
-	file.Methods = make([]CMethod, 0)
-	file.Structs = make([]CStruct, 0)
-	file.Enums = make([]CEnum, 0)
+	file.Namespaces = make([]CppNamespace, 0)
+	file.Classes = make([]CppClass, 0)
+	file.Methods = make([]CppMethod, 0)
+	file.Structs = make([]CppStruct, 0)
+	file.Enums = make([]CppEnum, 0)
 }
 
-//检测
-func (file *CFile) Detect(path string){
+//初始化
+func (file *CppFile) Detect(path string){
 	file.Path = path
 	content := util.ReadBytes(path)
 	size := len(content)
@@ -82,26 +99,37 @@ func (file *CFile) Detect(path string){
 				file.Headers = append(file.Headers, header)
 			}
 		}
+		if char == "c"{
+			if lan.IsTargetWord(content, idx, lan.CPP_CLASS){
+				cppClass := CppClass{}
+				processClass(content, &idx, size, &line, &cppClass)
+				file.Classes = append(file.Classes, cppClass)
+			}
+		}
 		if char == "{"{
 			words := lan.GetFrontWords(content, idx, 2)
 			if words[0] == lan.C_ENUM {
-				ce := CEnum{EnumName:words[1]}
+				ce := CppEnum{EnumName:words[1]}
 				processEnum(content, &idx, size, &line ,&ce)
 				file.Enums = append(file.Enums, ce)
 			}else if words[1] == lan.C_ENUM {
-				ce := CEnum{EnumName:""}
+				ce := CppEnum{EnumName:""}
 				processEnum(content, &idx, size, &line ,&ce)
 				file.Enums = append(file.Enums, ce)
 			}else if words[0] == lan.C_STRUCT{
-				cs := CStruct{StructName:words[1]}
+				cs := CppStruct{StructName:words[1]}
 				processStruct(content, &idx, size, &line, &cs)
 				file.Structs = append(file.Structs, cs)
 			}else if words[1] == lan.C_STRUCT {
-				cs := CStruct{StructName:""}
+				cs := CppStruct{StructName:""}
 				processStruct(content, &idx, size, &line, &cs)
 				file.Structs = append(file.Structs, cs)
-			}else if strings.Contains(words[0], ")") || strings.Contains(words[1], ")"){
-				cm := CMethod{}
+			}else if words[0] == lan.CPP_NAMESPACE {
+				cn := CppNamespace{Name:words[1]}
+				processNamespace(content, &idx, size, &line, &cn)
+				file.Namespaces = append(file.Namespaces, cn)
+			} else if strings.Contains(words[0], ")") || strings.Contains(words[1], ")"){
+				cm := CppMethod{}
 				processMethod(content, &idx, size, &line, &cm)
 				if cm.MethodName != lan.C_DEFINE{
 					file.Methods = append(file.Methods, cm)
@@ -162,8 +190,88 @@ func processHeader(content []byte, idx *int, size int, line *int, header *string
 	*header = s
 }
 
+//处理Cpp类
+func processClass(content []byte, idx *int, size int, line *int, cppClass *CppClass){
+	cppClass.StartLine = *line + 1
+
+	//获取类名
+	*idx += len(lan.CPP_CLASS)
+	var char string
+	for {
+		if *idx >= size{
+			break
+		}
+		char = string(content[*idx])
+		lan.CheckLine(char, line)
+		if !util.IsSpace(char){
+			break
+		}
+		*idx++
+	}
+	for {
+		cppClass.Name += char
+		*idx++
+		if *idx >= size{
+			break
+		}
+		char = string(content[*idx])
+		lan.CheckLine(char, line)
+		if !util.IsIdentifier(char){
+			break
+		}
+	}
+
+	//获取超类
+	cppClass.SuperClasses = make([]string, 0)
+	sentence := ""
+	for {
+		if char == "{"{
+			break
+		}
+		sentence += char
+		*idx++
+		if *idx >= size{
+			break
+		}
+		char = string(content[*idx])
+		lan.CheckLine(char, line)
+	}
+	sentence = strings.ReplaceAll(sentence, ",", " ")
+	words := strings.Split(sentence, " ")
+	for _,word := range words {
+		word = strings.Trim(word, " :\n")
+		if util.IsIdentifier(word){
+			if !strings.Contains(lan.CPP_ACCESS, word){
+				cppClass.SuperClasses = append(cppClass.SuperClasses, word)
+			}
+		}
+	}
+
+	//获取结束行
+	leftBracketCnt := 1
+	tmpIndex := *idx
+	tmpLine := *line
+	for {
+		if leftBracketCnt == 0{
+			break
+		}
+		tmpIndex++
+		if tmpIndex >= size{
+			break
+		}
+		char = string(content[tmpIndex])
+		lan.CheckLine(char, &tmpLine)
+		if char == "{"{
+			leftBracketCnt++
+		}else if char == "}"{
+			leftBracketCnt--
+		}
+	}
+	cppClass.EndLine = tmpLine + 1
+}
+
 //处理枚举变量
-func processEnum(content []byte, idx *int, size int, line *int, ce *CEnum){
+func processEnum(content []byte, idx *int, size int, line *int, ce *CppEnum){
 	leftBracketCnt := 1
 	ce.StartLine = *line + 1
 	var char string
@@ -187,7 +295,7 @@ func processEnum(content []byte, idx *int, size int, line *int, ce *CEnum){
 }
 
 //处理结构体
-func processStruct(content []byte, idx *int, size int, line *int, cs *CStruct){
+func processStruct(content []byte, idx *int, size int, line *int, cs *CppStruct){
 	leftBracketCnt := 1
 	cs.StartLine = *line + 1
 	var char string
@@ -210,8 +318,36 @@ func processStruct(content []byte, idx *int, size int, line *int, cs *CStruct){
 	cs.EndLine = *line + 1
 }
 
+//处理命名空间
+func processNamespace(content []byte, idx *int, size int, line *int, cn *CppNamespace){
+	cn.StartLine = *line + 1
+	char := string(content[*idx])
+
+	//获取结束行
+	leftBracketCnt := 1
+	tmpIndex := *idx
+	tmpLine := *line
+	for {
+		if leftBracketCnt == 0{
+			break
+		}
+		tmpIndex++
+		if tmpIndex >= size{
+			break
+		}
+		char = string(content[tmpIndex])
+		lan.CheckLine(char, &tmpLine)
+		if char == "{"{
+			leftBracketCnt++
+		}else if char == "}"{
+			leftBracketCnt--
+		}
+	}
+	cn.EndLine = tmpLine + 1
+}
+
 //处理函数
-func processMethod(content []byte, idx *int, size int, line *int, cm *CMethod){
+func processMethod(content []byte, idx *int, size int, line *int, cm *CppMethod){
 	cm.StartLine = *line + 1
 	var char string
 	tmpIndex := *idx

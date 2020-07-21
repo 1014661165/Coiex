@@ -4,6 +4,7 @@ import (
 	"./config"
 	"./lan"
 	"./lan/c"
+	"./lan/cpp"
 	"./lan/java"
 	"./util"
 	"fmt"
@@ -23,6 +24,9 @@ func main() {
 	}else if conf.Language == lan.LANGUAGE_JAVA{
 		result := java.Process(files)
 		java.Output(result, &conf)
+	}else if conf.Language == lan.LANGUAGE_CPP{
+		result := cpp.Process(files)
+		cpp.Output(result, &conf)
 	}
 	timeEnd := time.Now()
 	fmt.Printf("%d file had been processed!\n", len(files))
