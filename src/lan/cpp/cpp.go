@@ -299,23 +299,25 @@ func processStruct(content []byte, idx *int, size int, line *int, cs *CppStruct)
 	leftBracketCnt := 1
 	cs.StartLine = *line + 1
 	var char string
+	tmpIndex := *idx
+	tmpLine := *line
 	for {
 		if leftBracketCnt == 0{
 			break
 		}
-		*idx++
-		if *idx >= size{
+		tmpIndex++
+		if tmpIndex >= size{
 			break
 		}
-		char = string(content[*idx])
-		lan.CheckLine(char, line)
+		char = string(content[tmpIndex])
+		lan.CheckLine(char, &tmpLine)
 		if char == "{"{
 			leftBracketCnt++
 		}else if char == "}"{
 			leftBracketCnt--
 		}
 	}
-	cs.EndLine = *line + 1
+	cs.EndLine = tmpLine + 1
 }
 
 //处理命名空间
