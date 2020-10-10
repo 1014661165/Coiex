@@ -1,7 +1,7 @@
 package cpp
 
 import (
-	"../../config"
+	"Coiex/config"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"

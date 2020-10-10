@@ -3,7 +3,7 @@ package lan
 import (
 	"strings"
 
-	"../util"
+	"Coiex/util"
 )
 
 const LANGUAGE_C = "c"

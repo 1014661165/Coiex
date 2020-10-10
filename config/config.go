@@ -1,7 +1,7 @@
 package config
 
 import (
-	"../util"
+	"Coiex/util"
 	"encoding/xml"
 	"io/ioutil"
 )
@@ -27,7 +27,7 @@ func (c *Config) Save(file string){
 	c.Extensions = ""
 	c.OutputFolder = "result"
 	c.OutputInterval = 0
-	content,_ := xml.MarshalIndent(c, "", "\t")
+	content,_ := xml.MarshalIndent(c, "", "  ")
 	ioutil.WriteFile(file, content, 0744)
 }
 

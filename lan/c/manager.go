@@ -1,27 +1,27 @@
-package java
+package c
 
 import (
-	"../../config"
+	"Coiex/config"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 )
 
 //处理程序
-func Process(files []string) []JavaFile{
-	result := make([]JavaFile, len(files))
+func Process(files []string) []CFile{
+	result := make([]CFile, len(files))
 	for i, file := range files {
 		fmt.Printf("%.2f%%\n", float32((i+1)*100)/float32(len(files)))
-		jfile := JavaFile{}
-		jfile.Init()
-		jfile.Detect(file)
-		result[i] = jfile
+		cfile := CFile{}
+		cfile.Init()
+		cfile.Detect(file)
+		result[i] = cfile
 	}
 	return result
 }
 
 //输出
-func Output(result []JavaFile, conf *config.Config){
+func Output(result []CFile, conf *config.Config){
 	if conf.OutputInterval == 0{
 		filename := fmt.Sprintf("%s/1.json", conf.OutputFolder)
 		content,_ := json.MarshalIndent(result, "", "\t")

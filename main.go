@@ -1,12 +1,12 @@
 package main
 
 import (
-	"./config"
-	"./lan"
-	"./lan/c"
-	"./lan/cpp"
-	"./lan/java"
-	"./util"
+	"Coiex/config"
+	"Coiex/lan"
+	"Coiex/lan/c"
+	"Coiex/lan/cpp"
+	"Coiex/lan/java"
+	"Coiex/util"
 	"fmt"
 	"strings"
 	"time"

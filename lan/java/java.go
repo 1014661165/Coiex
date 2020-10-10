@@ -1,8 +1,8 @@
 package java
 
 import (
-	"../../lan"
-	"../../util"
+	"Coiex/lan"
+	"Coiex/util"
 	"strings"
 )
 
