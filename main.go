@@ -28,7 +28,6 @@ func main() {
 		result := cpp.Process(files)
 		cpp.Output(result, &conf)
 	}
-	timeEnd := time.Now()
 	fmt.Printf("%d file had been processed!\n", len(files))
-	fmt.Printf("task finish! time cost:%.1f s\n", timeEnd.Sub(timeStart).Seconds())
+	fmt.Printf("task finish! time cost: %v\n", time.Since(timeStart))
 }

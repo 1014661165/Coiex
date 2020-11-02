@@ -6,6 +6,10 @@ import (
 	"strings"
 )
 
+var (
+	methodId = 0
+)
+
 //Java文件
 type JavaFile struct {
 	lan.File
@@ -27,6 +31,7 @@ type JavaClass struct {
 
 //Java方法
 type JavaMethod struct {
+	MethodId int `json:"method_id"`
 	MethodName string `json:"method_name"`
 	Params string `json:"params"`
 	Access string `json:"access"`
@@ -100,7 +105,8 @@ func (file *JavaFile) Detect(path string){
 		}
 		if char == "{"{
 			if isMethod(content, idx){
-				javaMethod := JavaMethod{}
+				methodId++
+				javaMethod := JavaMethod{MethodId:methodId}
 				processMethod(content, &idx, size, &line, &javaMethod)
 				file.Methods = append(file.Methods, javaMethod)
 			}
@@ -198,7 +204,7 @@ func processClass(content []byte, idx *int, size int, line *int, javaClass *Java
 	}
 
 	//获取超类和接口
-	javaClass.SuperClass = "java.lang.Object"
+	javaClass.SuperClass = ""
 	javaClass.Interfaces = make([]string, 0)
 	sentence := ""
 	for {

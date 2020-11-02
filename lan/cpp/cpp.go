@@ -6,6 +6,10 @@ import (
 	"strings"
 )
 
+var (
+	methodId = 0
+)
+
 //Cpp文件
 type CppFile struct {
 	lan.File
@@ -32,6 +36,7 @@ type CppClass struct {
 
 //Cpp文件方法
 type CppMethod struct {
+	MethodId int `json:"method_id"`
 	MethodName string `json:"method_name"`
 	Params string `json:"params"`
 	StartLine int `json:"start_line"`
@@ -132,6 +137,8 @@ func (file *CppFile) Detect(path string){
 				cm := CppMethod{}
 				processMethod(content, &idx, size, &line, &cm)
 				if cm.MethodName != lan.C_DEFINE{
+					methodId++
+					cm.MethodId = methodId
 					file.Methods = append(file.Methods, cm)
 				}
 			}

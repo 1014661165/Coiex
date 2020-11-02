@@ -1,7 +1,7 @@
 <Config>
-  <repo_path></repo_path>
-  <extensions></extensions>
-  <language></language>
-  <output_folder>result</output_folder>
-  <output_interval>0</output_interval>
+  <repo_path>/Users/wujun/GitHouse</repo_path>
+  <extensions>java</extensions>
+  <language>java</language>
+  <output_folder>result-java</output_folder>
+  <output_interval>1000</output_interval>
 </Config>

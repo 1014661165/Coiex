@@ -6,6 +6,10 @@ import (
 	"strings"
 )
 
+var (
+	methodId = 0
+)
+
 //C文件
 type CFile struct {
 	lan.File
@@ -17,6 +21,7 @@ type CFile struct {
 
 //C文件方法
 type CMethod struct {
+	MethodId int `json:"method_id"`
 	MethodName string `json:"method_name"`
 	Params string `json:"params"`
 	StartLine int `json:"start_line"`
@@ -104,6 +109,8 @@ func (file *CFile) Detect(path string){
 				cm := CMethod{}
 				processMethod(content, &idx, size, &line, &cm)
 				if cm.MethodName != lan.C_DEFINE{
+					methodId++
+					cm.MethodId = methodId
 					file.Methods = append(file.Methods, cm)
 				}
 			}

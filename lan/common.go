@@ -143,6 +143,7 @@ func FindApis(chars []byte, filterKeywords string) []string {
 	var char string
 	index := 0
 	apis := make([]string, 0)
+	apiMap := make(map[string]bool)
 	for {
 		if index >= len(chars) {
 			break
@@ -181,7 +182,11 @@ func FindApis(chars []byte, filterKeywords string) []string {
 				api := strings.Join(apiName, "")
 				if api != "" {
 					if !strings.Contains(filterKeywords, api) {
-						apis = append(apis, api)
+						_, ok := apiMap[api]
+						if !ok {
+							apis = append(apis, api)
+							apiMap[api] = true
+						}
 					}
 				}
 			}
